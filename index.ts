@@ -22,7 +22,7 @@ const createJWKSMock = (
   let jwksUrlNock: any
   return {
     start() {
-      jwksUrlNock = nock(jwksOrigin)
+      jwksUrlNock = nock(jwksOrigin, { allowUnmocked: true })
         .get(jwksPath)
         .reply(200, JWKS)
         .persist()
