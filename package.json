@@ -7,7 +7,6 @@
     "build": "tsc -d",
     "test": "tape -r ts-node/register '**/__tests__/**/*.{js,ts}' ",
     "clean": "rm -rf build",
-    "prepare": "npm run build",
     "prebuild": "yarn run clean",
     "prepublishOnly": "yarn run build",
     "lint": "tslint --project .",
