@@ -46,6 +46,21 @@ const PUBLIC_KEY_PEM =
   'HwIDAQAB\n' +
   '-----END PUBLIC KEY-----\n'
 
+const JWKS_CONST:JWKS =  {
+    keys:[
+        {
+            alg:"RSA256",
+            e:"65537",
+            kid:"eGs0S2paTkZ5TFVxVU9XUm1LMXBFd1JPVDZZPQ",
+            kty:"RSA",
+            n:"AKaKHKTt221BeqPHsiZUAn8C2oRLLp1nVRfvsjhMiruC6dY9Jto/z+4hzrcQQJI3TNl9qFt6jtZkdLCBXn6p5vd4NKtp0bmBKEvlt6Ol+dMIzlZvH6/7S6hC88uQaBE9AEJewMadQzbG9BzTgXKCAbfsVWOCPpOrlySSTM24L2oQIEi2fUVtGdFk/nQh2aWVI9Jy8TVyD3XIuuQcOiKIJ6lxz+gMCmV6U+ows486vbsh8VXLnasOo9JEMOPPwOQOgDeXyFctXCp3dLCnakV9TVKlaIjqzuI2gwdSHSw/mJkRPyYzh7FiDBJWAj8Sqp7DaOlQrJRl/84opwKx4akQax8=",
+            use:"sig",
+            x5c:["MIICqjCCAZKgAwIBAgICASMwDQYJKoZIhvcNAQEFBQAwADAeFw0yMTA4MTMxODUxNDBaFw0yMjA4MTMxODUxNDBaMDAxLjAsBgNVBAMTJWh0dHBzOi8vZmluYXZvLWRldmVsb3BtZW50LmF1dGgwLmNvbS8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCmihyk7dttQXqjx7ImVAJ/AtqESy6dZ1UX77I4TIq7gunWPSbaP8/uIc63EECSN0zZfahbeo7WZHSwgV5+qeb3eDSradG5gShL5bejpfnTCM5Wbx+v+0uoQvPLkGgRPQBCXsDGnUM2xvQc04FyggG37FVjgj6Tq5ckkkzNuC9qECBItn1FbRnRZP50IdmllSPScvE1cg91yLrkHDoiiCepcc/oDAplelPqMLOPOr27IfFVy52rDqPSRDDjz8DkDoA3l8hXLVwqd3Swp2pFfU1SpWiI6s7iNoMHUh0sP5iZET8mM4exYgwSVgI/Eqqew2jpUKyUZf/OKKcCseGpEGsfAgMBAAEwDQYJKoZIhvcNAQEFBQADggEBAFLBR27v7wJgo3N1hq/zvThA61jEw+KcAaoSo4piDLyp/bSZyFf9+gcM7YKMsCQfcybwlldVXOQ73HMSXR0opr2wH2MqBZQpHiHb6x0T1H4uVsrD9Xb1JPSbRi8YnmpohCPpat0ODv1Hr3lhLwAObeukNSqyhQubKzDw6MDhbd4+KDvwI4m8UxP8SGxXKXlC/F8zO8Bx74f/LvXzewNQyJlFwRoU/u94bd2NWwEbjJohZFRwPGM/RjY7DUm8a4zF5gRdy5Vt7e0FQ2/hWsoJdqeG9agxIJEm5QZoZqaIBSsTq19RcSI0SY/L6FnSx4sKOrVjsFdiBRAgK8+C2j4oK54="],
+            x5t:"eGs0S2paTkZ5TFVxVU9XUm1LMXBFd1JPVDZZPQ"
+        }
+    ]
+};
+
 export interface JWKS {
   keys: [
     {
@@ -103,36 +118,7 @@ export const createJWKS = ({
   publicKey: forge.pki.PublicKey
   jwksOrigin?: string
 }): JWKS => {
-  const helperKey = new NodeRSA()
-  helperKey.importKey(forge.pki.privateKeyToPem(privateKey))
-  const { n: modulus, e: exponent } = helperKey.exportKey('components')
-  const certPem = createCertificate({
-    jwksOrigin,
-    privateKey,
-    publicKey,
-  })
-  const certDer = forge.util.encode64(
-    forge.asn1
-      .toDer(forge.pki.certificateToAsn1(forge.pki.certificateFromPem(certPem)))
-      .getBytes()
-  )
-  const sha1gen = forge.md.sha1.create()
-  sha1gen.update(certPem)
-  const thumbprint = base64url.encode(getCertThumbprint(certDer))
-  return {
-    keys: [
-      {
-        alg: 'RSA256',
-        e: String(exponent),
-        kid: thumbprint,
-        kty: 'RSA',
-        n: modulus.toString('base64'),
-        use: 'sig',
-        x5c: [certDer],
-        x5t: thumbprint,
-      },
-    ],
-  }
+  return JWKS_CONST;
 }
 
 export const createKeyPair = () => {

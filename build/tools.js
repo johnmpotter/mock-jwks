@@ -6,15 +6,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 exports.__esModule = true;
-var base64url = __importStar(require("base64-url"));
 var crypto_1 = require("crypto");
 var jsonwebtoken_1 = require("jsonwebtoken");
 var forge = __importStar(require("node-forge"));
-var node_rsa_1 = __importDefault(require("node-rsa"));
 /* HARDCODED MOCK RSA KEYS */
 var PRIVATE_KEY_PEM = '-----BEGIN RSA PRIVATE KEY-----\n' +
     'MIIEpAIBAAKCAQEApoocpO3bbUF6o8eyJlQCfwLahEsunWdVF++yOEyKu4Lp1j0m\n' +
@@ -52,6 +47,20 @@ var PUBLIC_KEY_PEM = '-----BEGIN PUBLIC KEY-----\n' +
     'UqVoiOrO4jaDB1IdLD+YmRE/JjOHsWIMElYCPxKqnsNo6VCslGX/ziinArHhqRBr\n' +
     'HwIDAQAB\n' +
     '-----END PUBLIC KEY-----\n';
+var JWKS_CONST = {
+    keys: [
+        {
+            alg: "RSA256",
+            e: "65537",
+            kid: "eGs0S2paTkZ5TFVxVU9XUm1LMXBFd1JPVDZZPQ",
+            kty: "RSA",
+            n: "AKaKHKTt221BeqPHsiZUAn8C2oRLLp1nVRfvsjhMiruC6dY9Jto/z+4hzrcQQJI3TNl9qFt6jtZkdLCBXn6p5vd4NKtp0bmBKEvlt6Ol+dMIzlZvH6/7S6hC88uQaBE9AEJewMadQzbG9BzTgXKCAbfsVWOCPpOrlySSTM24L2oQIEi2fUVtGdFk/nQh2aWVI9Jy8TVyD3XIuuQcOiKIJ6lxz+gMCmV6U+ows486vbsh8VXLnasOo9JEMOPPwOQOgDeXyFctXCp3dLCnakV9TVKlaIjqzuI2gwdSHSw/mJkRPyYzh7FiDBJWAj8Sqp7DaOlQrJRl/84opwKx4akQax8=",
+            use: "sig",
+            x5c: ["MIICqjCCAZKgAwIBAgICASMwDQYJKoZIhvcNAQEFBQAwADAeFw0yMTA4MTMxODUxNDBaFw0yMjA4MTMxODUxNDBaMDAxLjAsBgNVBAMTJWh0dHBzOi8vZmluYXZvLWRldmVsb3BtZW50LmF1dGgwLmNvbS8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCmihyk7dttQXqjx7ImVAJ/AtqESy6dZ1UX77I4TIq7gunWPSbaP8/uIc63EECSN0zZfahbeo7WZHSwgV5+qeb3eDSradG5gShL5bejpfnTCM5Wbx+v+0uoQvPLkGgRPQBCXsDGnUM2xvQc04FyggG37FVjgj6Tq5ckkkzNuC9qECBItn1FbRnRZP50IdmllSPScvE1cg91yLrkHDoiiCepcc/oDAplelPqMLOPOr27IfFVy52rDqPSRDDjz8DkDoA3l8hXLVwqd3Swp2pFfU1SpWiI6s7iNoMHUh0sP5iZET8mM4exYgwSVgI/Eqqew2jpUKyUZf/OKKcCseGpEGsfAgMBAAEwDQYJKoZIhvcNAQEFBQADggEBAFLBR27v7wJgo3N1hq/zvThA61jEw+KcAaoSo4piDLyp/bSZyFf9+gcM7YKMsCQfcybwlldVXOQ73HMSXR0opr2wH2MqBZQpHiHb6x0T1H4uVsrD9Xb1JPSbRi8YnmpohCPpat0ODv1Hr3lhLwAObeukNSqyhQubKzDw6MDhbd4+KDvwI4m8UxP8SGxXKXlC/F8zO8Bx74f/LvXzewNQyJlFwRoU/u94bd2NWwEbjJohZFRwPGM/RjY7DUm8a4zF5gRdy5Vt7e0FQ2/hWsoJdqeG9agxIJEm5QZoZqaIBSsTq19RcSI0SY/L6FnSx4sKOrVjsFdiBRAgK8+C2j4oK54="],
+            x5t: "eGs0S2paTkZ5TFVxVU9XUm1LMXBFd1JPVDZZPQ"
+        }
+    ]
+};
 exports.createCertificate = function (_a) {
     var publicKey = _a.publicKey, privateKey = _a.privateKey, jwksOrigin = _a.jwksOrigin;
     var cert = forge.pki.createCertificate();
@@ -78,34 +87,7 @@ var getCertThumbprint = function (certificate) {
 };
 exports.createJWKS = function (_a) {
     var privateKey = _a.privateKey, publicKey = _a.publicKey, jwksOrigin = _a.jwksOrigin;
-    var helperKey = new node_rsa_1["default"]();
-    helperKey.importKey(forge.pki.privateKeyToPem(privateKey));
-    var _b = helperKey.exportKey('components'), modulus = _b.n, exponent = _b.e;
-    var certPem = exports.createCertificate({
-        jwksOrigin: jwksOrigin,
-        privateKey: privateKey,
-        publicKey: publicKey
-    });
-    var certDer = forge.util.encode64(forge.asn1
-        .toDer(forge.pki.certificateToAsn1(forge.pki.certificateFromPem(certPem)))
-        .getBytes());
-    var sha1gen = forge.md.sha1.create();
-    sha1gen.update(certPem);
-    var thumbprint = base64url.encode(getCertThumbprint(certDer));
-    return {
-        keys: [
-            {
-                alg: 'RSA256',
-                e: String(exponent),
-                kid: thumbprint,
-                kty: 'RSA',
-                n: modulus.toString('base64'),
-                use: 'sig',
-                x5c: [certDer],
-                x5t: thumbprint
-            },
-        ]
-    };
+    return JWKS_CONST;
 };
 exports.createKeyPair = function () {
     var privateKey = forge.pki.privateKeyFromPem(PRIVATE_KEY_PEM);
